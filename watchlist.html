@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Watchlist</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .movie-card {
+            border: 1px solid #ddd;
+            margin: 10px;
+            padding: 10px;
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .watchlist-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .watchlist-button.added {
+            background-color: #f44336;
+            transform: scale(1.1);
+        }
+
+        #watchlist {
+            margin-top: 20px;
+            width: 80%;
+        }
+
+        .watchlist-item {
+            border: 1px solid #eee;
+            padding: 8px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Movie Watchlist</h1>
+
+    <div id="movie-list">
+        </div>
+
+    <h2>My Watchlist</h2>
+    <div id="watchlist">
+        </div>
+
+    <script>
+        const movieList = document.getElementById('movie-list');
+        const watchlist = document.getElementById('watchlist');
+
+        // Mock API for simulating server-side storage
+        const mockApi = {
+            saveWatchlist: async (data) => {
+                // Simulate saving to a server (replace with actual API call)
+                console.log('Saving watchlist to server:', data);
+                return Promise.resolve({ success: true });
+            },
+            getWatchlist: async () => {
+                // Simulate fetching from a server (replace with actual API call)
+                console.log('Fetching watchlist from server');
+                return Promise.resolve(JSON.parse(localStorage.getItem('watchlist')) || []);
+            }
+        };
+
+        // Sample movie data
+        const movies = [
+            { id: 1, title: 'Movie 1', poster: 'movie1.jpg' },
+            { id: 2, title: 'Movie 2', poster: 'movie2.jpg' },
+            { id: 3, title: 'Movie 3', poster: 'movie3.jpg' },
+            { id: 4, title: 'Movie 4', poster: 'movie4.jpg' },
+        ];
+
+        // Function to render movie cards
+        function renderMovies() {
+            movieList.innerHTML = '';
+            movies.forEach(movie => {
+                const movieCard = document.createElement('div');
+                movieCard.classList.add('movie-card');
+                movieCard.innerHTML = `
+                    <h3>${movie.title}</h3>
+                    <img src="${movie.poster}" alt="${movie.title}" width="150">
+                    <button class="watchlist-button" data-movie-id="${movie.id}">Add to Watchlist</button>
+                `;
+                movieList.appendChild(movieCard);
+            });
+            setupWatchlistButtons();
+        }
+
+        // Function to setup watchlist buttons
+        function setupWatchlistButtons() {
+            const buttons = document.querySelectorAll('.watchlist-button');
+            buttons.forEach(button => {
+                const movieId = parseInt(button.dataset.movieId);
+                const isAdded = getWatchlist().some(item => item.id === movieId);
+                if (isAdded) {
+                    button.classList.add('added');
+                    button.textContent = 'Remove from Watchlist';
+                }
+
+                button.addEventListener('click', () => {
+                    toggleWatchlist(movieId, button);
+                });
+            });
+        }
+
+        // Function to toggle watchlist
+        async function toggleWatchlist(movieId, button) {
+            let currentWatchlist = getWatchlist();
+            const movie = movies.find(m => m.id === movieId);
+
+            const isAdded = currentWatchlist.some(item => item.id === movieId);
+            if (isAdded) {
+                currentWatchlist = currentWatchlist.filter(item => item.id !== movieId);
+                button.classList.remove('added');
+                button.textContent = 'Add to Watchlist';
+                button.style.transform = 'scale(1)';
+            } else {
+                currentWatchlist.push(movie);
+                button.classList.add('added');
+                button.textContent = 'Remove from Watchlist';
+                button.style.transform = 'scale(1.1)';
+            }
+
+            setWatchlist(currentWatchlist);
+            await mockApi.saveWatchlist(currentWatchlist); // Simulate server save
+            renderWatchlist();
+        }
+
+        // Function to get watchlist from local storage
+        function getWatchlist() {
+            return JSON.parse(localStorage.getItem('watchlist')) || [];
+        }
+
+        // Function to set watchlist in local storage
+        function setWatchlist(data) {
+            localStorage.setItem('watchlist', JSON.stringify(data));
+        }
+
+        // Function to render watchlist
+        function renderWatchlist() {
+            watchlist.innerHTML = '';
+            const currentWatchlist = getWatchlist();
+            currentWatchlist.forEach(movie => {
+                const watchlistItem = document.createElement('div');
+                watchlistItem.classList.add('watchlist-item');
+                watchlistItem.textContent = movie.title;
+                watchlist.appendChild(watchlistItem);
+            });
+        }
+
+        // Initialize the application
+        async function init() {
+            const serverWatchlist = await mockApi.getWatchlist();
+            setWatchlist(serverWatchlist);
+            renderMovies();
+            renderWatchlist();
+        }
+
+        init();
+    </script>
+</body>
+</html>
